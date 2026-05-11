@@ -10,25 +10,16 @@ DNS（Domain Name System）是互联网的"电话簿"，负责把域名翻译成
 
 ### 1.1 查询过程（递归查询）
 
-```
-你的电脑
-  │  问：en.wikiversity.org 的 IP 是多少？（RD=1，要求递归）
-  ▼
-本地 DNS 服务器（如 114.114.114.114）
-  │  它不知道，去问根服务器 →
-  │  根服务器说去问 .org 的 TLD 服务器 →
-  │  TLD 服务器说去问 wikiversity.org 的权威服务器 →
-  │  权威服务器回答：103.102.166.224
-  ▼
-本地 DNS 把答案告诉你的电脑
-```
-
-关键点：**你的电脑只和本地 DNS 服务器说话**，中间的递归过程由它代劳。
+电脑——DNS recursor——由它进行递归：
+1. Root nameserver
+  .com(which book) - return TLD server
+2. TLD server
+  which page
+3. Domain nameserver
+  which row - return IP Address
 
 ### 1.2 常见 DNS 记录类型
 
-| 类型 | 含义 | 例子 |
-|------|------|------|
 | A | 域名 → IPv4 地址 | `dyna.wikimedia.org → 103.102.166.224` |
 | AAAA | 域名 → IPv6 地址 | `en.wikiversity.org → 2001:df2:e500:ed1a::1` |
 | CNAME | 别名 → 真实域名 | `en.wikiversity.org → dyna.wikimedia.org` |
@@ -63,14 +54,15 @@ dyna.wikimedia.org   A      →  103.102.166.224  ← 真实 IP 在这里
 
 ## 二、dig 命令
 
+格式： dig [@server可以指定DNS服务器为你解析] [name域名] [type查询什么信息] [+queryoptions查询/返回方式要求]
+
 ### 2.1 基本用法
 
 ```bash
 # 查询 A 记录（默认）
 dig google.com
-
 # 指定 DNS 服务器查询
-dig @8.8.8.8 google.com
+dig  google.com @8.8.8.8
 
 # 查询指定记录类型
 dig google.com MX
@@ -80,11 +72,21 @@ dig google.com NS
 # 反向查询（IP → 域名）
 dig -x 8.8.8.8
 
-# 精简输出，只看结果
+# 精简输出，只看结果，比较常用
 dig google.com +short
 
 # 追踪完整递归过程（从根服务器开始）
 dig google.com +trace
+```
+
+```
+遇到的trouble：
+1. trace不成功
+原因：trace是要直接接触RootDNS，但是我的环境（WSL + 本地 DNS代理）不能自由访问公网 root DNS
+解决（不好）：```dig +trace google.com @8.8.8.8```recursor还是参与查询，其优化等特性导致输出丢失信息比较多
+2. DNESEC不出现RRSIG
+原因：依旧是被recursor隐藏
+解决：```dig +trace google.com @8.8.8.8```能返回RRSIG
 ```
 
 ### 2.2 读懂 dig 输出
@@ -110,27 +112,12 @@ dyna.wikimedia.org.   10 IN A     103.102.166.224
 - **AUTHORITY**：哪个权威服务器负责这个域
 - **ADDITIONAL**：附加信息（权威服务器的 IP 等）
 
-### 2.3 常用选项速查
-
-| 选项 | 作用 |
-|------|------|
-| `@server` | 指定使用哪台 DNS 服务器 |
-| `+short` | 只输出结果，去掉所有元信息 |
-| `+trace` | 从根服务器开始追踪全过程 |
-| `+noall +answer` | 只显示 Answer Section |
-| `-x` | 反向查询（PTR） |
-| `+tcp` | 强制用 TCP 而非 UDP |
 
 ---
 
 ## 三、Wireshark 抓包
 
-### 3.1 安装注意事项（Windows）
-
-- 安装 Wireshark 时必须同时安装 **Npcap**（抓包驱动），否则网卡列表为空
-- 如果网卡列表是空的：运行 Wireshark 安装目录里的 `npcap-x.xx.exe` 再重启 Wireshark
-
-### 3.2 界面三个区域
+### 3.1 界面三个区域
 
 ```
 ┌──────────────────────────────────────────┐
@@ -147,7 +134,7 @@ dyna.wikimedia.org.   10 IN A     103.102.166.224
 
 **注意**：用**单击**选包（下方详情区展开，支持链接跳转）；**双击**会弹出独立窗口，不支持 [Response In: xxxx] 链接跳转。
 
-### 3.3 抓 DNS 包的步骤
+### 3.2 抓 DNS 包的步骤
 
 ```
 1. 清除 DNS 缓存（确保发出真实请求）
@@ -164,7 +151,7 @@ dyna.wikimedia.org.   10 IN A     103.102.166.224
 5. 回到 Wireshark，找到对应的包
 ```
 
-### 3.4 常用过滤语法
+### 3.3 常用过滤语法
 
 ```
 dns                          只看 DNS 包
@@ -196,7 +183,7 @@ DNS 报文分 5 个 Section，对应 Wireshark 里的字段：
 │  Transaction ID / Flags / 计数字段  │
 ├────────────────────────────────────┤
 │  Question Section                  │
-│  问的域名 + 类型（A/MX/...）        │
+│  就是Queries，问的域名 + 类型）      |
 ├────────────────────────────────────┤
 │  Answer Section                    │
 │  回答的资源记录（RR）               │
@@ -223,7 +210,7 @@ query 包 `Flags: 0x0100` vs response 包 `Flags: 0x8180`：
 | RA | Recursion Available | 0 | 1 | 1=服务器支持递归 |
 | RCODE | Reply Code | - | 0 | 0=No error，3=NXDOMAIN |
 
-### 4.2 实际抓包对照（你的 en.wikiversity.org 查询）
+### 4.2 实际抓包对照（ en.wikiversity.org 查询）
 
 **Query 包（Frame 2325）：**
 ```
