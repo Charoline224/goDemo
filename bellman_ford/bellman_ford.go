@@ -7,31 +7,33 @@ import (
 	"math"
 	"os"
 )
-type Edge struct{
-	from,to,val int 
+
+type Edge struct {
+	from, to, val int
 }
 
-type Grid struct{
-	n int
+type Grid struct {
+	n     int
 	edges []Edge
 }
 
-type ShortestPathAlgo interface{
-	Run(grid Grid, start int) int 
+type ShortestPathAlgo interface {
+	Run(grid Grid, start int) int
 }
 type Bellmanford struct{}
-func (b Bellmanford)Run(grid Grid, start int) int{
+
+func (b Bellmanford) Run(grid Grid, start int) int {
 	n := grid.n
-	minDist := make([]int ,n+1)
-	for i := range minDist{
+	minDist := make([]int, n+1)
+	for i := range minDist {
 		minDist[i] = math.MaxInt32
 	}
 	minDist[1] = 0
-	for i:=1;i<n;i++{
+	for i := 1; i < n; i++ {
 		updated := false
-		for _, edge := range grid.edges{
+		for _, edge := range grid.edges {
 			if minDist[edge.from] != math.MaxInt32 &&
-			minDist[edge.to] > minDist[edge.from]+edge.val {
+				minDist[edge.to] > minDist[edge.from]+edge.val {
 				minDist[edge.to] = minDist[edge.from] + edge.val
 				updated = true
 			}
@@ -49,17 +51,17 @@ func main() {
 	fmt.Fscan(in, &n, &m)
 	edges := make([]Edge, m)
 	grid := Grid{
-		 n:n,
-		 edges: edges,
+		n:     n,
+		edges: edges,
 	}
 	for i := 0; i < m; i++ {
 		var p1, p2, val int
 		fmt.Fscan(in, &p1, &p2, &val)
-		grid.edges[i] = Edge{from:p1, to: p2, val: val}
+		grid.edges[i] = Edge{from: p1, to: p2, val: val}
 	}
 
 	start := 1
-	
+
 	var algo ShortestPathAlgo = Bellmanford{}
 	dist := algo.Run(grid, start)
 
