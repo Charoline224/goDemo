@@ -79,15 +79,7 @@ dig google.com +short
 dig google.com +trace
 ```
 
-```
-遇到的trouble：
-1. trace不成功
-原因：trace是要直接接触RootDNS，但是我的环境（WSL + 本地 DNS代理）不能自由访问公网 root DNS
-解决（不好）：```dig +trace google.com @8.8.8.8```recursor还是参与查询，其优化等特性导致输出丢失信息比较多
-2. DNESEC不出现RRSIG
-原因：依旧是被recursor隐藏
-解决：```dig +trace google.com @8.8.8.8```能返回RRSIG
-```
+
 
 ### 2.2 读懂 dig 输出
 
@@ -112,6 +104,16 @@ dyna.wikimedia.org.   10 IN A     103.102.166.224
 - **AUTHORITY**：哪个权威服务器负责这个域
 - **ADDITIONAL**：附加信息（权威服务器的 IP 等）
 
+
+### 2.3 遇到的trouble：
+```
+1. trace不成功
+原因：trace是要直接接触RootDNS，但是我的环境（WSL + 本地 DNS代理）不能自由访问公网 root DNS
+解决（不好）：```dig +trace google.com @8.8.8.8```recursor还是参与查询，其优化等特性导致输出丢失信息比较多
+2. DNESEC不出现RRSIG
+原因：依旧是被recursor隐藏
+解决：```dig +trace google.com @8.8.8.8```能返回RRSIG
+```
 
 ---
 
@@ -162,12 +164,12 @@ http                         只看 HTTP
 ip.addr == 10.16.203.92      只看某 IP 的通信
 ```
 
-### 3.5 选择哪张网卡
+### 3.4 选择哪张网卡
 
 | 网卡名 | 说明 |
 |--------|------|
 | WLAN | Wi-Fi，有波形就选这个 |
-| 以太网 | 插网线时用 |
+| 以太网 | 有线（插网线时用） |
 | Adapter for loopback | 本机自己通信（127.0.0.1） |
 | 本地连接* 3/4/5 | 虚拟网卡（WSL/VPN），一般不用 |
 
@@ -251,9 +253,6 @@ Answers:
 
 ## 五、常见问题
 
-**Q: 为什么 Wireshark 打开后网卡列表是空的？**
-A: Npcap 没有正确安装。运行 Wireshark 安装目录里的 `npcap-x.xx.exe`，重启 Wireshark。
-
 **Q: 为什么浏览器输入 114.114.114.114 无响应？**
 A: 114.114.114.114 是 DNS 服务器，只监听 UDP 53 端口响应 DNS 查询，不提供网页服务。
 
@@ -263,15 +262,6 @@ A: 看记录类型。CNAME 的值是另一个域名；A 记录的值是 IP 地�
 **Q: ipconfig /flushdns 之后为什么缓存里还有记录？**
 A: 刷新后残留的是本机自身的记录（如 `LAPTOP-xxx.mshome.net`），这是正常的本地解析条目，不影响实验。
 
-**Q: Wireshark 里点击 [Response In: xxxx] 没有反应？**
-A: 你双击打开了独立详情窗口，关掉它，回到主界面用**单击**选包，再点链接就可以跳转。
 
 ---
 
-## 六、参考资料
-
-- [RFC 1034 - DNS Concepts](https://datatracker.ietf.org/doc/html/rfc1034)
-- [RFC 1035 - DNS Implementation & Specification](https://datatracker.ietf.org/doc/html/rfc1035)
-- [Cloudflare - What is DNS?](https://www.cloudflare.com/learning/dns/what-is-dns/)
-- [Linuxize - dig 命令完全指南](https://linuxize.com/post/how-to-use-dig-command-to-query-dns-in-linux/)
-- [Wireshark Wiki - DNS](https://wiki.wireshark.org/DNS)
