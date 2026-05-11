@@ -1,3 +1,4 @@
+// 单源最短路
 package main
 
 import (
@@ -47,15 +48,16 @@ func dijkstra(n, m int, edges [][]int, start, end int) {
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 	heap.Push(pq, &Edge{to: start, val: 0})
-	//
+	//开始循环，直到所有点入列
 	for pq.Len() > 0 {
-
+		//1.选最小
 		edge := heap.Pop(pq).(*Edge)
-
+		//2.判断/标记
 		if visited[edge.to] {
 			continue
 		}
 		visited[edge.to] = true
+		//3.更新
 		for _, new := range grid[edge.to] {
 			if !visited[new.to] && new.val+minDist[edge.to] < minDist[new.to] {
 				minDist[new.to] = new.val + minDist[edge.to]
