@@ -106,14 +106,14 @@ dyna.wikimedia.org.   10 IN A     103.102.166.224
 
 
 ### 2.3 遇到的trouble：
-```
+
 1. trace不成功
 原因：trace是要直接接触RootDNS，但是我的环境（WSL + 本地 DNS代理）不能自由访问公网 root DNS
 解决（不好）：```dig +trace google.com @8.8.8.8```recursor还是参与查询，其优化等特性导致输出丢失信息比较多
 2. DNESEC不出现RRSIG
 原因：依旧是被recursor隐藏
 解决：```dig +trace google.com @8.8.8.8```能返回RRSIG
-```
+
 
 ---
 
