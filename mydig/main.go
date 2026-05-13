@@ -10,6 +10,7 @@ import (
 func main() {
 	var domain, server string
 	var qtype uint16
+	// TODO : A +trace根服务器查询直接给我答案了，但是NS +trace可以返回trace路径
 	var trace bool
 	for _, s := range os.Args[1:] {
 		if strings.HasPrefix(s, "@") {
@@ -34,12 +35,11 @@ func main() {
 		}
 	}
 	if server == "" {
-		server = "198.41.0.4"
+		server = "199.9.14.201"
 	}
 	if qtype == 0 {
 		qtype = 1
 	}
-	fmt.Println("domain:", domain, "server:", server, "qtype:", qtype)
 	ress, err := dns.Resolve(domain, server, qtype, trace)
 	if err != nil {
 		fmt.Println(err)
